@@ -8,12 +8,16 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Loader2 } from "lucide-react"
+import { ChangePasswordForm } from "./change-password-form"
+
+type AuthStep = 'login' | 'force_change_password'
 
 export function LoginForm() {
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState("")
+  const [authStep, setAuthStep] = useState<AuthStep>('login')
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -22,14 +26,37 @@ export function LoginForm() {
 
     try {
       const result = await signIn({ username: email, password })
+      
       if (result.isSignedIn) {
         window.location.reload()
+      } else if (result.nextStep?.signInStep === 'CONFIRM_SIGN_IN_WITH_NEW_PASSWORD_REQUIRED') {
+        setAuthStep('force_change_password')
+      } else if (result.nextStep?.signInStep) {
+        setError(`Authentication challenge not supported: ${result.nextStep.signInStep}`)
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : "An error occurred")
     } finally {
       setIsLoading(false)
     }
+  }
+
+  const handlePasswordChangeSuccess = () => {
+    window.location.reload()
+  }
+
+  const handlePasswordChangeError = (errorMessage: string) => {
+    setError(errorMessage)
+    setAuthStep('login')
+  }
+
+  if (authStep === 'force_change_password') {
+    return (
+      <ChangePasswordForm 
+        onSuccess={handlePasswordChangeSuccess}
+        onError={handlePasswordChangeError}
+      />
+    )
   }
 
   return (
