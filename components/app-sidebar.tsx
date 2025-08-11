@@ -1,6 +1,8 @@
 "use client"
 
 import * as React from "react"
+import { usePathname } from "next/navigation"
+import { useAuthenticator } from "@aws-amplify/ui-react"
 import {
   CreditCard,
   GalleryVerticalEnd,
@@ -37,7 +39,6 @@ const data = {
       title: "支払い状況検索",
       url: "/payment-status",
       icon: CreditCard,
-      isActive: true,
     },
     {
       title: "外国人就労者検索",
@@ -48,16 +49,30 @@ const data = {
 }
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
+  const pathname = usePathname()
+  const { user } = useAuthenticator()
+  
+  const userData = {
+    name: user?.signInDetails?.loginId?.split('@')[0] || "User",
+    email: user?.signInDetails?.loginId || "user@jac.com",
+    avatar: "/avatars/admin.jpg",
+  }
+  
+  const navMainWithActiveState = data.navMain.map(item => ({
+    ...item,
+    isActive: pathname === item.url
+  }))
+
   return (
     <Sidebar collapsible="icon" {...props}>
       <SidebarHeader>
         <TeamSwitcher teams={data.teams} />
       </SidebarHeader>
       <SidebarContent>
-        <NavMain items={data.navMain} />
+        <NavMain items={navMainWithActiveState} />
       </SidebarContent>
       <SidebarFooter>
-        <NavUser user={data.user} />
+        <NavUser user={userData} />
       </SidebarFooter>
       <SidebarRail />
     </Sidebar>

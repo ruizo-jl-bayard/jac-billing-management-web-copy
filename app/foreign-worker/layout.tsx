@@ -38,7 +38,7 @@ export default function ForeignWorkerLayout({
                 </BreadcrumbList>
               </Breadcrumb>
             </div>
-            <div className="ml-auto">
+            <div className="ml-auto flex items-center gap-2">
               <UserNav />
             </div>
           </div>
