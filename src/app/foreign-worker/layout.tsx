@@ -1,6 +1,6 @@
 "use client"
 
-import { AppSidebar } from "@/components/app-sidebar"
+import { AppSidebar } from "@/components/layout/app-sidebar"
 import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator } from "@/components/ui/breadcrumb"
 import { Separator } from "@/components/ui/separator"
 import {
@@ -8,9 +8,8 @@ import {
   SidebarProvider,
   SidebarTrigger,
 } from "@/components/ui/sidebar"
-import { UserNav } from "@/components/user-nav"
 
-export default function PaymentStatusLayout({
+export default function ForeignWorkerLayout({
   children,
 }: {
   children: React.ReactNode
@@ -27,8 +26,8 @@ export default function PaymentStatusLayout({
               <Breadcrumb>
                 <BreadcrumbList>
                   <BreadcrumbItem className="hidden md:block">
-                    <BreadcrumbLink href="/payment-status">
-                      支払い状況検索
+                    <BreadcrumbLink href="/foreign-worker">
+                      外国人就労者検索
                     </BreadcrumbLink>
                   </BreadcrumbItem>
                   <BreadcrumbSeparator className="hidden md:block" />
@@ -39,7 +38,6 @@ export default function PaymentStatusLayout({
               </Breadcrumb>
             </div>
             <div className="ml-auto flex items-center gap-2">
-              <UserNav />
             </div>
           </div>
         </header>

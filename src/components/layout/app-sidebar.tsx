@@ -3,15 +3,11 @@
 import * as React from "react"
 import { usePathname } from "next/navigation"
 import { useAuthenticator } from "@aws-amplify/ui-react"
-import {
-  CreditCard,
-  GalleryVerticalEnd,
-  Users,
-} from "lucide-react"
+import { CreditCard, GalleryVerticalEnd, Users } from "lucide-react"
 
-import { NavMain } from "@/components/nav-main"
-import { NavUser } from "@/components/nav-user"
-import { TeamSwitcher } from "@/components/team-switcher"
+import { NavMain } from "./nav-main"
+import { NavUser } from "./nav-user"
+import { TeamSwitcher } from "./team-switcher"
 import {
   Sidebar,
   SidebarContent,
@@ -20,7 +16,6 @@ import {
   SidebarRail,
 } from "@/components/ui/sidebar"
 
-// This is sample data.
 const data = {
   user: {
     name: "Admin User",
@@ -50,14 +45,14 @@ const data = {
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const pathname = usePathname()
-  const { user } = useAuthenticator()
+  const { user } = useAuthenticator((context) => [context.user])
   
-  const userData = {
-    name: user?.signInDetails?.loginId?.split('@')[0] || "User",
-    email: user?.signInDetails?.loginId || "user@jac.com",
+  const userData = user ? {
+    name: user.signInDetails?.loginId || "User",
+    email: user.signInDetails?.loginId || "",
     avatar: "/avatars/admin.jpg",
-  }
-  
+  } : data.user
+
   const navMainWithActiveState = data.navMain.map(item => ({
     ...item,
     isActive: pathname === item.url

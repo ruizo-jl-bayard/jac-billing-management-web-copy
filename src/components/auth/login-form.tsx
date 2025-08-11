@@ -3,12 +3,7 @@
 import { useState } from "react"
 import { signIn } from "aws-amplify/auth"
 import { Button } from "@/components/ui/button"
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Alert, AlertDescription } from "@/components/ui/alert"
@@ -28,7 +23,6 @@ export function LoginForm() {
     try {
       const result = await signIn({ username: email, password })
       if (result.isSignedIn) {
-        // Force a re-render of the auth context
         window.location.reload()
       }
     } catch (err) {

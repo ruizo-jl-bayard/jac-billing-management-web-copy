@@ -9,8 +9,8 @@ import {
   Moon,
   Sun,
 } from "lucide-react"
-import { useAuthenticator } from "@aws-amplify/ui-react"
 import { useTheme } from "next-themes"
+import { signOut } from "aws-amplify/auth"
 
 import {
   Avatar,
@@ -43,11 +43,15 @@ export function NavUser({
   }
 }) {
   const { isMobile } = useSidebar()
-  const { signOut } = useAuthenticator()
   const { setTheme } = useTheme()
 
-  const handleLogout = () => {
-    signOut()
+  const handleLogout = async () => {
+    try {
+      await signOut()
+      window.location.href = '/'
+    } catch (error) {
+      console.error('Error signing out:', error)
+    }
   }
 
   return (
