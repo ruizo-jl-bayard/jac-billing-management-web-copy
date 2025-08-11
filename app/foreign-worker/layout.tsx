@@ -10,7 +10,7 @@ import {
 } from "@/components/ui/sidebar"
 import { UserNav } from "@/components/user-nav"
 
-export default function DashboardLayout({
+export default function ForeignWorkerLayout({
   children,
 }: {
   children: React.ReactNode
@@ -27,13 +27,13 @@ export default function DashboardLayout({
               <Breadcrumb>
                 <BreadcrumbList>
                   <BreadcrumbItem className="hidden md:block">
-                    <BreadcrumbLink href="/dashboard">
-                      Dashboard
+                    <BreadcrumbLink href="/foreign-worker">
+                      外国人就労者検索
                     </BreadcrumbLink>
                   </BreadcrumbItem>
                   <BreadcrumbSeparator className="hidden md:block" />
                   <BreadcrumbItem>
-                    <BreadcrumbPage>Overview</BreadcrumbPage>
+                    <BreadcrumbPage>検索</BreadcrumbPage>
                   </BreadcrumbItem>
                 </BreadcrumbList>
               </Breadcrumb>
