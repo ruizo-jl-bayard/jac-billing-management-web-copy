@@ -1,0 +1,130 @@
+[data-amplify-authenticator] {
+  --amplify-colors-background-primary: hsl(var(--background));
+  --amplify-colors-background-secondary: hsl(var(--muted));
+  --amplify-colors-font-primary: hsl(var(--foreground));
+  --amplify-colors-font-secondary: hsl(var(--muted-foreground));
+  --amplify-colors-border-primary: hsl(var(--border));
+  --amplify-components-authenticator-router-background-color: hsl(var(--card));
+  --amplify-components-authenticator-router-border-color: hsl(var(--border));
+  --amplify-components-authenticator-router-border-width: 1px;
+  --amplify-components-authenticator-router-border-style: solid;
+  --amplify-components-authenticator-router-border-radius: 2.5rem;
+  --amplify-components-authenticator-router-box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  --amplify-components-authenticator-form-padding: 2rem;
+  --amplify-components-authenticator-form-background-color: transparent;
+  --amplify-components-button-primary-background-color: hsl(var(--primary));
+  --amplify-components-button-primary-border-color: hsl(var(--primary));
+  --amplify-components-button-primary-color: hsl(var(--primary-foreground));
+  --amplify-components-button-primary-border-radius: var(--radius);
+  --amplify-components-button-primary-padding-block-start: 0.5rem;
+  --amplify-components-button-primary-padding-block-end: 0.5rem;
+  --amplify-components-button-primary-padding-inline-start: 1rem;
+  --amplify-components-button-primary-padding-inline-end: 1rem;
+  --amplify-components-button-primary-hover-background-color: hsl(var(--primary) / 0.9);
+  --amplify-components-button-primary-hover-border-color: hsl(var(--primary) / 0.9);
+  --amplify-components-button-primary-focus-background-color: hsl(var(--primary));
+  --amplify-components-button-primary-focus-border-color: hsl(var(--primary));
+  --amplify-components-button-primary-focus-box-shadow: 0 0 0 2px hsl(var(--ring));
+  --amplify-components-button-link-color: hsl(var(--primary));
+  --amplify-components-button-link-hover-color: hsl(var(--primary) / 0.8);
+  --amplify-components-fieldcontrol-background-color: hsl(var(--background));
+  --amplify-components-fieldcontrol-border-color: hsl(var(--input));
+  --amplify-components-fieldcontrol-border-width: 1px;
+  --amplify-components-fieldcontrol-border-style: solid;
+  --amplify-components-fieldcontrol-border-radius: var(--radius);
+  --amplify-components-fieldcontrol-color: hsl(var(--foreground));
+  --amplify-components-fieldcontrol-padding-block-start: 0.5rem;
+  --amplify-components-fieldcontrol-padding-block-end: 0.5rem;
+  --amplify-components-fieldcontrol-padding-inline-start: 0.75rem;
+  --amplify-components-fieldcontrol-padding-inline-end: 0.75rem;
+  --amplify-components-fieldcontrol-focus-border-color: hsl(var(--ring));
+  --amplify-components-fieldcontrol-focus-box-shadow: 0 0 0 2px hsl(var(--ring) / 0.2);
+  --amplify-components-fieldcontrol-error-border-color: hsl(var(--destructive));
+  --amplify-components-fieldcontrol-error-color: hsl(var(--destructive));
+  --amplify-components-fieldcontrol-disabled-background-color: hsl(var(--muted));
+  --amplify-components-fieldcontrol-disabled-border-color: hsl(var(--muted));
+  --amplify-components-fieldcontrol-disabled-color: hsl(var(--muted-foreground));
+  --amplify-components-field-label-color: hsl(var(--foreground));
+  --amplify-components-field-error-message-color: hsl(var(--destructive));
+  --amplify-components-text-color: hsl(var(--foreground));
+  --amplify-components-heading-color: hsl(var(--foreground));
+  --amplify-components-tabs-border-color: hsl(var(--border));
+  --amplify-components-tabs-item-color: hsl(var(--muted-foreground));
+  --amplify-components-tabs-item-active-border-color: hsl(var(--primary));
+  --amplify-components-tabs-item-active-color: hsl(var(--primary));
+  --amplify-components-tabs-item-hover-color: hsl(var(--foreground));
+  --amplify-components-alert-background-color: hsl(var(--card));
+  --amplify-components-alert-border-color: hsl(var(--border));
+  --amplify-components-alert-color: hsl(var(--foreground));
+  --amplify-components-alert-border-radius: var(--radius);
+  --amplify-components-alert-error-background-color: hsl(var(--destructive) / 0.1);
+  --amplify-components-alert-error-border-color: hsl(var(--destructive));
+  --amplify-components-alert-error-color: hsl(var(--destructive));
+  --amplify-components-divider-background-color: hsl(var(--border));
+  --amplify-components-link-color: hsl(var(--primary));
+  --amplify-components-link-hover-color: hsl(var(--primary) / 0.8);
+  --amplify-components-loader-stroke-color: hsl(var(--primary));
+}
+.jac-auth-header {
+  margin-bottom: 2rem;
+  text-align: center;
+}
+
+.jac-auth-logo {
+  font-size: 2.5rem;
+  font-weight: 800;
+  color: hsl(var(--primary));
+  margin-bottom: 0.5rem;
+  letter-spacing: -0.025em;
+}
+
+.jac-auth-subtitle {
+  color: hsl(var(--muted-foreground));
+  font-size: 1rem;
+}
+
+[data-amplify-router] {
+  border-radius: 1rem !important;
+}
+[data-amplify-authenticator][data-variation=modal] {
+    background-color: hsl(var(--background)) !important;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .amplify-button--primary {
+    transition: all 0.2s ease-in-out;
+  }
+  
+  .amplify-button--primary:hover {
+    transform: translateY(-1px);
+  }
+  
+  .amplify-field-control {
+    transition: border-color 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+  }
+  
+  .amplify-tabs-item {
+    transition: color 0.2s ease-in-out, border-color 0.2s ease-in-out;
+  }
+}
+
+@media (max-width: 640px) {
+  [data-amplify-authenticator] {
+    --amplify-components-authenticator-form-padding: 1.5rem;
+  }
+  
+  .jac-auth-logo {
+    font-size: 2rem;
+  }
+}
+
+.dark [data-amplify-authenticator] {
+  --amplify-components-fieldcontrol-border-width: 1px;
+}
+
+@media (prefers-contrast: high) {
+  [data-amplify-authenticator] {
+    --amplify-components-fieldcontrol-border-width: 2px;
+    --amplify-components-button-primary-border-width: 2px;
+  }
+}
