@@ -1,8 +1,8 @@
 "use client"
 
 import { Amplify } from "aws-amplify"
-import { Authenticator, useAuthenticator } from "@aws-amplify/ui-react"
-import { LoginForm } from "./login-form"
+import { Authenticator, useAuthenticator, View, Image, Text, Heading } from "@aws-amplify/ui-react"
+import '@aws-amplify/ui-react/styles.css'
 import outputs from "../../../amplify_outputs.json"
 
 Amplify.configure(outputs)
@@ -23,6 +23,72 @@ function LoadingScreen() {
   )
 }
 
+const components = {
+  Header() {
+    return (
+      <View textAlign="center" padding="large">
+        <Heading level={1} fontSize="2xl" fontWeight="bold" color="var(--amplify-colors-font-primary)">
+          JAC
+        </Heading>
+        <Text color="var(--amplify-colors-font-secondary)" fontSize="small">
+          Sign in to your account to continue
+        </Text>
+      </View>
+    )
+  },
+  
+  SignIn: {
+    Header() {
+      return null
+    }
+  },
+
+  ForceNewPassword: {
+    Header() {
+      return (
+        <Heading level={2} fontSize="xl" fontWeight="semibold" textAlign="center" marginBottom="medium">
+          Change Password
+        </Heading>
+      )
+    }
+  },
+
+  ForgotPassword: {
+    Header() {
+      return (
+        <Heading level={2} fontSize="xl" fontWeight="semibold" textAlign="center" marginBottom="medium">
+          Reset Password
+        </Heading>
+      )
+    }
+  }
+}
+
+const formFields = {
+  signIn: {
+    username: {
+      placeholder: 'Enter your email',
+      label: 'Email'
+    },
+    password: {
+      placeholder: 'Enter your password',
+      label: 'Password'
+    }
+  },
+  forceNewPassword: {
+    password: {
+      placeholder: 'Enter new password',
+      label: 'New Password'
+    }
+  },
+  forgotPassword: {
+    username: {
+      placeholder: 'Enter your email',
+      label: 'Email'
+    }
+  }
+}
+
 function AuthContent({ children }: AuthWrapperProps) {
   const { authStatus } = useAuthenticator((context) => [context.authStatus])
 
@@ -34,13 +100,21 @@ function AuthContent({ children }: AuthWrapperProps) {
     return <>{children}</>
   }
 
-  return <LoginForm />
+  return null
 }
 
 export function AuthWrapper({ children }: AuthWrapperProps) {
   return (
-    <Authenticator.Provider>
-      <AuthContent>{children}</AuthContent>
-    </Authenticator.Provider>
+    <div className="h-screen w-screen flex items-center justify-center overflow-hidden">
+      <Authenticator
+        components={components}
+        formFields={formFields}
+        hideSignUp={true}
+        loginMechanisms={['email']}
+        socialProviders={[]}
+      >
+        <AuthContent>{children}</AuthContent>
+      </Authenticator>
+    </div>
   )
 }

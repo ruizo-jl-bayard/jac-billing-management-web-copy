@@ -10,7 +10,7 @@ import {
   Sun,
 } from "lucide-react"
 import { useTheme } from "next-themes"
-import { signOut } from "aws-amplify/auth"
+import { useAuthenticator } from "@aws-amplify/ui-react"
 
 import {
   Avatar,
@@ -36,7 +36,7 @@ import {
 export function NavUser({
   user,
 }: {
-  user: {
+  user?: {
     name: string
     email: string
     avatar: string
@@ -44,11 +44,17 @@ export function NavUser({
 }) {
   const { isMobile } = useSidebar()
   const { setTheme } = useTheme()
+  const { user: authUser, signOut } = useAuthenticator((context) => [context.user, context.signOut])
+
+  const displayUser = user || {
+    name: authUser?.signInDetails?.loginId?.split('@')[0] || 'User',
+    email: authUser?.signInDetails?.loginId || '',
+    avatar: '/avatars/admin.jpg'
+  }
 
   const handleLogout = async () => {
     try {
-      await signOut()
-      window.location.href = '/'
+      signOut()
     } catch (error) {
       console.error('Error signing out:', error)
     }
@@ -64,12 +70,12 @@ export function NavUser({
               className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
             >
               <Avatar className="h-8 w-8 rounded-lg">
-                <AvatarImage src={user.avatar} alt={user.name} />
+                <AvatarImage src={displayUser.avatar} alt={displayUser.name} />
                 <AvatarFallback className="rounded-lg">JA</AvatarFallback>
               </Avatar>
               <div className="grid flex-1 text-left text-sm leading-tight">
-                <span className="truncate font-semibold">{user.name}</span>
-                <span className="truncate text-xs">{user.email}</span>
+                <span className="truncate font-semibold">{displayUser.name}</span>
+                <span className="truncate text-xs">{displayUser.email}</span>
               </div>
               <ChevronsUpDown className="ml-auto size-4" />
             </SidebarMenuButton>
@@ -83,12 +89,12 @@ export function NavUser({
             <DropdownMenuLabel className="p-0 font-normal">
               <div className="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
                 <Avatar className="h-8 w-8 rounded-lg">
-                  <AvatarImage src={user.avatar} alt={user.name} />
+                  <AvatarImage src={displayUser.avatar} alt={displayUser.name} />
                   <AvatarFallback className="rounded-lg">JA</AvatarFallback>
                 </Avatar>
                 <div className="grid flex-1 text-left text-sm leading-tight">
-                  <span className="truncate font-semibold">{user.name}</span>
-                  <span className="truncate text-xs">{user.email}</span>
+                  <span className="truncate font-semibold">{displayUser.name}</span>
+                  <span className="truncate text-xs">{displayUser.email}</span>
                 </div>
               </div>
             </DropdownMenuLabel>
