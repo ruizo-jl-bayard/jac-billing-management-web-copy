@@ -368,7 +368,7 @@ export function AuthWrapper({ children }: AuthWrapperProps) {
         formFields={formFields}
         hideSignUp={true}
         loginMechanisms={['email']}
-        socialProviders={[]}
+        socialProviders={['google']}
         variation="modal"
       >
         <AuthContent>{children}</AuthContent>
