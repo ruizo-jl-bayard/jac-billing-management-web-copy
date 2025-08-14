@@ -40,6 +40,11 @@ const data = {
       url: "/foreign-worker",
       icon: Users,
     },
+    {
+      title: "Process",
+      url: "/process",
+      icon: GalleryVerticalEnd,
+    },
   ]
 }
 
