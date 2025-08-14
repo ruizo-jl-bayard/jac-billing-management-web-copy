@@ -1,32 +1,74 @@
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+"use client"; // ← add this at the very top
+
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import type { Schema } from "../../../amplify/data/resource";
+import { generateClient } from "aws-amplify/data";
+import { useState } from "react";
+
+const client = generateClient<Schema>();
+
+type File = {
+  key: string;
+  versionId: string;
+  isLatest: boolean;
+};
 
 export default function PaymentStatusPage() {
+  const [list, setList] = useState<File[]>([]);
+
+  const saveForm = async () => {
+    try {
+      const a = await client.mutations.saveForm({
+        acceptanceFile: { key: "", versionId: "" },
+        membershipInformationFile: { key: "", versionId: "" },
+        reEmploymentHistory: { key: "", versionId: "" },
+      });
+      console.log(a);
+      console.log("✅ Form saved successfully");
+    } catch (error) {
+      console.error("❌ Error saving form:", error);
+    }
+  };
+
+  const getList = async () => {
+    const response = await client.queries.getS3Objects() as { data: unknown };
+    const data = response.data as File[];
+    setList(data);
+  };
+
   return (
-    <div className="grid gap-4">
-      <div className="grid auto-rows-min gap-4 md:grid-cols-1">
-        <Card>
-          <CardHeader>
-            <CardTitle>支払い状況検索</CardTitle>
-            <CardDescription>
-              支払い状況を検索・管理するページです
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              <p className="text-muted-foreground">
-                ここに支払い状況の検索機能と一覧表示が実装されます。
-              </p>
-              <div className="grid gap-2 p-4 bg-muted rounded-lg">
-                <div className="text-sm font-medium">機能予定:</div>
-                <ul className="text-sm text-muted-foreground space-y-1">
-                  <li>• 未払い・支払い済みのフィルタリング</li>
-                  <li>• 詳細情報の確認</li>
-                </ul>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+    <div className="flex flex-col justify-start p-4 space-y-6">
+      {/* File List */}
+      <div>
+        <ul className="space-y-2">
+          {list.map((item, index) => (
+            <li key={index}>
+              Key: {item.key}, Version: {item.versionId}, Latest: {item.isLatest ? "Yes" : "No"}
+            </li>
+          ))}
+        </ul>
+      </div>
+
+      <hr />
+
+      {/* Buttons */}
+      <div className="flex space-x-4">
+        <button
+          type="button"
+          className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-400"
+          onClick={getList}
+        >
+          Get List
+        </button>
+
+        <button
+          type="button"
+          className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-400"
+          onClick={saveForm}
+        >
+          Save Form
+        </button>
       </div>
     </div>
-  )
+  );
 }

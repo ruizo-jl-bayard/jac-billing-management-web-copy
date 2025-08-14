@@ -1,4 +1,7 @@
 import { type ClientSchema, a, defineData } from "@aws-amplify/backend";
+import { sayHello } from "../functions/sayHello/resource";
+import { getS3Objects } from "../functions/getS3Objects/resource";
+import { saveForm } from "../functions/saveForm/resource";
 
 /*== STEP 1 ===============================================================
 The section below creates a Todo database table with a "content" field. Try
@@ -6,12 +9,48 @@ adding a new "isDone" field as a boolean. The authorization rule below
 specifies that any user authenticated via an API key can "create", "read",
 "update", and "delete" any "Todo" records.
 =========================================================================*/
+
 const schema = a.schema({
   Todo: a
     .model({
       content: a.string(),
     })
-    .authorization((allow) => [allow.publicApiKey()]),
+    .authorization((allow) => [allow.authenticated()]),
+
+  S3File: a.customType({
+    key: a.string(),
+    versionId: a.string(),
+    istLatest: a.boolean()
+  }),
+  FileInput: a.customType({
+    key: a.string().required(),
+    versionId: a.string().required()
+  }),
+  sayHello: a
+    .mutation()
+    .arguments({
+      name: a.string(),
+      userId: a.string()
+    })
+    .authorization((allow) => allow.authenticated())
+    .handler((a.handler.function(sayHello)))
+    .returns(a.string()),
+  getS3Objects: a
+    .query()
+    .authorization((allow) => allow.authenticated())
+    .handler((a.handler.function(getS3Objects)))
+    .returns(a.ref('S3File').array()),
+  saveForm: a
+    .mutation()
+    .arguments({
+      acceptanceFile: a.ref("FileInput"),
+      membershipInformationFile: a.ref("FileInput"),
+      reEmploymentHistory: a.ref("FileInput")
+    })
+    .authorization((allow) => allow.authenticated())
+    .handler((a.handler.function(saveForm)))
+    .returns(a.boolean()),
+
 });
 
 export type Schema = ClientSchema<typeof schema>;
@@ -19,11 +58,13 @@ export type Schema = ClientSchema<typeof schema>;
 export const data = defineData({
   schema,
   authorizationModes: {
-    defaultAuthorizationMode: "apiKey",
+    defaultAuthorizationMode: "userPool",
+    // API Key is used for a.allow.public() rules
     apiKeyAuthorizationMode: {
       expiresInDays: 30,
     },
   },
+
 });
 
 /*== STEP 2 ===============================================================
@@ -31,7 +72,7 @@ Go to your frontend source code. From your client-side code, generate a
 Data client to make CRUDL requests to your table. (THIS SNIPPET WILL ONLY
 WORK IN THE FRONTEND CODE FILE.)
 
-Using JavaScript or Next.js React Server Components, Middleware, Server 
+Using JavaScript or Next.js React Server Components, Middleware, Server
 Actions or Pages Router? Review how to generate Data clients for those use
 cases: https://docs.amplify.aws/gen2/build-a-backend/data/connect-to-API/
 =========================================================================*/
