@@ -2,6 +2,7 @@ import { type ClientSchema, a, defineData } from "@aws-amplify/backend";
 import { sayHello } from "../functions/sayHello/resource";
 import { getS3Objects } from "../functions/getS3Objects/resource";
 import { saveForm } from "../functions/saveForm/resource";
+import { triggerCamunda } from "../functions/triggerCamunda/resource";
 
 /*== STEP 1 ===============================================================
 The section below creates a Todo database table with a "content" field. Try
@@ -20,11 +21,12 @@ const schema = a.schema({
   S3File: a.customType({
     key: a.string(),
     versionId: a.string(),
-    istLatest: a.boolean()
+    isLatest: a.boolean()
   }),
   FileInput: a.customType({
     key: a.string().required(),
-    versionId: a.string().required()
+    versionId: a.string().required(),
+    isLatest: a.boolean()
   }),
   sayHello: a
     .mutation()
@@ -49,6 +51,16 @@ const schema = a.schema({
     })
     .authorization((allow) => allow.authenticated())
     .handler((a.handler.function(saveForm)))
+    .returns(a.boolean()),
+  triggerCamunda: a
+    .mutation()
+    .arguments({
+      acceptanceFile: a.ref("FileInput"),
+      membershipInformationFile: a.ref("FileInput"),
+      reEmploymentHistory: a.ref("FileInput")
+    })
+    .authorization((allow) => allow.authenticated())
+    .handler((a.handler.function(triggerCamunda)))
     .returns(a.boolean()),
 
 });

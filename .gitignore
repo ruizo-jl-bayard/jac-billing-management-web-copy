@@ -39,3 +39,7 @@ next-env.d.ts
 .amplify
 amplify_outputs*
 amplifyconfiguration*
+amplify/layers/**/nodejs/node_modules/
+notes.txt
+
+amplify/node_modules

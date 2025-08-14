@@ -1,0 +1,48 @@
+import { defineFunction, secret } from '@aws-amplify/backend';
+
+//import { env } from "$amplify/env/triggerCamunda";
+
+export const triggerCamunda = defineFunction({
+    name: 'trigger-camunda',
+    entry: './handler.ts',
+    environment: {
+        ZEEBE_ADDRESS: "b7b745e6-74fd-4db7-a065-0c07a36376af.dsm-1.zeebe.camunda.io:443",
+        ZEEBE_CLIENT_ID: secret("ZEEBE_CLIENT_ID"),
+        ZEEBE_CLIENT_SECRET: secret("ZEEBE_CLIENT_SECRET"),
+        ZEEBE_AUTHORIZATION_SERVER_URL: "https://login.cloud.camunda.io/oauth/token",
+        ZEEBE_REST_ADDRESS: "https://dsm-1.zeebe.camunda.io/b7b745e6-74fd-4db7-a065-0c07a36376af",
+        ZEEBE_GRPC_ADDRESS: "grpcs://b7b745e6-74fd-4db7-a065-0c07a36376af.dsm-1.zeebe.camunda.io:443",
+        ZEEBE_TOKEN_AUDIENCE: "zeebe.camunda.io",
+        CAMUNDA_CLUSTER_ID: "b7b745e6-74fd-4db7-a065-0c07a36376af",
+        CAMUNDA_CLIENT_ID: secret("ZEEBE_CLIENT_ID"),
+        CAMUNDA_CLIENT_SECRET: secret("ZEEBE_CLIENT_SECRET"),
+        CAMUNDA_CLUSTER_REGION: "dsm-1",
+        CAMUNDA_CREDENTIALS_SCOPES: "Zeebe,Tasklist,Operate,Secrets",
+        CAMUNDA_TASKLIST_BASE_URL: "https://dsm-1.tasklist.camunda.io/b7b745e6-74fd-4db7-a065-0c07a36376af",
+        CAMUNDA_OPERATE_BASE_URL: "https://dsm-1.operate.camunda.io/b7b745e6-74fd-4db7-a065-0c07a36376af",
+        CAMUNDA_OAUTH_URL: "https://login.cloud.camunda.io/oauth/token",
+        HOME: '/tmp',
+        BPMN_PROCESS_ID: 'Process_0owrc6e'
+    },
+    layers: {
+        "@camunda8/sdk": "arn:aws:lambda:ap-northeast-1:940482428367:layer:camunda-sdk8-layer:1"
+    }
+
+});
+
+
+//         # export ZEEBE_ADDRESS='b7b745e6-74fd-4db7-a065-0c07a36376af.dsm-1.zeebe.camunda.io:443'
+// # export ZEEBE_CLIENT_ID='bqU.c4vQCFW2EDNLqV5kFH5vbehFLmIG'
+// # export ZEEBE_CLIENT_SECRET='957PcuYr0CD44a1hdtXt2KfpSyqkQ--.JKQZfGQqmL-ApH_bKVVHT~e-BM-XZtA0'
+// # export ZEEBE_AUTHORIZATION_SERVER_URL='https://login.cloud.camunda.io/oauth/token'
+// # export ZEEBE_REST_ADDRESS='https://dsm-1.zeebe.camunda.io/b7b745e6-74fd-4db7-a065-0c07a36376af'
+// # export ZEEBE_GRPC_ADDRESS='grpcs://b7b745e6-74fd-4db7-a065-0c07a36376af.dsm-1.zeebe.camunda.io:443'
+// # export ZEEBE_TOKEN_AUDIENCE='zeebe.camunda.io'
+// # export CAMUNDA_CLUSTER_ID='b7b745e6-74fd-4db7-a065-0c07a36376af'
+// # export CAMUNDA_CLIENT_ID='bqU.c4vQCFW2EDNLqV5kFH5vbehFLmIG'
+// # export CAMUNDA_CLIENT_SECRET='957PcuYr0CD44a1hdtXt2KfpSyqkQ--.JKQZfGQqmL-ApH_bKVVHT~e-BM-XZtA0'
+// # export CAMUNDA_CLUSTER_REGION='dsm-1'
+// # export CAMUNDA_CREDENTIALS_SCOPES='Zeebe,Tasklist,Operate,Secrets'
+// # export CAMUNDA_TASKLIST_BASE_URL='https://dsm-1.tasklist.camunda.io/b7b745e6-74fd-4db7-a065-0c07a36376af'
+// # export CAMUNDA_OPERATE_BASE_URL='https://dsm-1.operate.camunda.io/b7b745e6-74fd-4db7-a065-0c07a36376af'
+// # export CAMUNDA_OAUTH_URL='https://login.cloud.camunda.io/oauth/token'

@@ -18,15 +18,20 @@ export default function PaymentStatusPage() {
 
   const saveForm = async () => {
     try {
-      const a = await client.mutations.saveForm({
-        acceptanceFile: { key: "", versionId: "" },
-        membershipInformationFile: { key: "", versionId: "" },
-        reEmploymentHistory: { key: "", versionId: "" },
+      // const a = await client.mutations.saveForm({
+      //   acceptanceFile: { key: "", versionId: "" },
+      //   membershipInformationFile: { key: "", versionId: "" },
+      //   reEmploymentHistory: { key: "", versionId: "" },
+      // });
+      await client.mutations.triggerCamunda({
+        acceptanceFile: list.find((a) => a.isLatest),
+        membershipInformationFile: list.find((a) => a.isLatest),
+        reEmploymentHistory: list.find((a) => a.isLatest),
       });
-      console.log(a);
-      console.log("✅ Form saved successfully");
+
+      console.log("Form saved successfully");
     } catch (error) {
-      console.error("❌ Error saving form:", error);
+      console.error("Error saving form:", error);
     }
   };
 
@@ -66,7 +71,7 @@ export default function PaymentStatusPage() {
           className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-400"
           onClick={saveForm}
         >
-          Save Form
+          Start Camunda
         </button>
       </div>
     </div>

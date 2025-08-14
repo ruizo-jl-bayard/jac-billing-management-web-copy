@@ -5,6 +5,7 @@ import { getS3Objects } from './functions/getS3Objects/resource.js';
 import { sayHello } from './functions/sayHello/resource.js';
 import { saveForm } from './functions/saveForm/resource.js';
 import { storage } from './storage/resource.js';
+import { triggerCamunda } from './functions/triggerCamunda/resource.js';
 
 defineBackend({
   auth,
@@ -12,5 +13,6 @@ defineBackend({
   sayHello,
   getS3Objects,
   saveForm,
-  storage
+  storage,
+  triggerCamunda,
 })
