@@ -23,5 +23,6 @@ export const triggerCamunda = defineFunction({
     },
     layers: {
         "@camunda8/sdk": "arn:aws:lambda:us-west-2:940482428367:layer:camunda-sdk-8:2"
-    }
+    },
+    timeoutSeconds: 30
 });

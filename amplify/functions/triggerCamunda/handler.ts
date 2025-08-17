@@ -13,10 +13,14 @@ export const handler: Schema["triggerCamunda"]["functionHandler"] = async (event
             }
         })
         return data;
-    } catch (e) {
-        console.log(e);
-        console.log("Error occurred while downloading and uploading the s3 object")
-        throw e;
+    } catch (err: any) {
+        console.error("Function error:", err);
+        return {
+            statusCode: 500,
+            body: JSON.stringify({
+                error: err.message || "Unknown error",
+            }),
+        };
 
     }
 

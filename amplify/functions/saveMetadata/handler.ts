@@ -15,44 +15,52 @@ const client = generateClient<Schema>();
 
 export const handler: Schema["saveMetadata"]["functionHandler"] = async (event) => {
     const params = event.arguments;
+    try {
+        const fileProcess = await client.models.FileProcess.create({
+            year: params.year,
+            month: params.month,
+            requestParams: JSON.stringify(params),
+            status: 'INPROGRESS',
 
+        });
 
-    const fileProcess = await client.models.FileProcess.create({
-        year: params.year,
-        month: params.month,
-        requestParams: JSON.stringify(params),
-        status: 'INPROGRESS',
+        if (!fileProcess.data) {
+            console.log(fileProcess)
+            throw new Error("File process creation failed");
+        }
 
-    });
+        await createFileUploads({
+            fileProcessId: fileProcess.data.id,
+            key: params.acceptanceFile?.key ?? '',
+            versionId: params.acceptanceFile?.versionId ?? '',
+            fileType: 'ACCEPTANCE_PLAN_DATA'
+        });
 
-    console.log(fileProcess)
-    if (!fileProcess.data) {
-        console.log(fileProcess)
-        throw new Error("File process creation failed");
-    }
+        await createFileUploads({
+            fileProcessId: fileProcess.data.id,
+            key: params.membershipInformationFile?.key ?? '',
+            versionId: params.membershipInformationFile?.versionId ?? '',
+            fileType: 'MEMBERS_INFO_DATA'
+        });
+        await createFileUploads({
+            fileProcessId: fileProcess.data.id,
+            key: params.reEmploymentHistory?.key ?? '',
+            versionId: params.reEmploymentHistory?.versionId ?? '',
+            fileType: 'REEMPLOYMENT_DATA'
+        });
 
-    await createFileUploads({
-        fileProcessId: fileProcess.data.id,
-        key: params.acceptanceFile?.key ?? '',
-        versionId: params.acceptanceFile?.versionId ?? '',
-        fileType: 'ACCEPTANCE_PLAN_DATA'
-    });
+        return {
+            processId: fileProcess.data.id
+        }
 
-    await createFileUploads({
-        fileProcessId: fileProcess.data.id,
-        key: params.membershipInformationFile?.key ?? '',
-        versionId: params.membershipInformationFile?.versionId ?? '',
-        fileType: 'MEMBERS_INFO_DATA'
-    });
-    await createFileUploads({
-        fileProcessId: fileProcess.data.id,
-        key: params.reEmploymentHistory?.key ?? '',
-        versionId: params.reEmploymentHistory?.versionId ?? '',
-        fileType: 'REEMPLOYMENT_DATA'
-    });
-
-    return {
-        processId: fileProcess.data.id
+    } catch (err: any) {
+        console.error("Function error:", err);
+        return {
+            statusCode: 500,
+            body: JSON.stringify({
+                error: err.message || "Unknown error",
+            }),
+        };
     }
 };
 
