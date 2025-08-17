@@ -4,11 +4,15 @@ import startProcess from './camunda_sdk'
 export const handler: Schema["triggerCamunda"]["functionHandler"] = async (event) => {
     const params = event.arguments
     try {
-        await startProcess({
-            selectedFiles: params
+        const data = await startProcess({
+            fileProcessId: params.fileProcessId,
+            selectedFiles: {
+                acceptanceFile: params.acceptanceFile,
+                membershipInformationFile: params.membershipInformationFile,
+                reEmploymentHistory: params.reEmploymentHistory
+            }
         })
-
-        return true;
+        return data;
     } catch (e) {
         console.log(e);
         console.log("Error occurred while downloading and uploading the s3 object")

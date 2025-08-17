@@ -46,9 +46,7 @@ async function downloadFile(file: {
 
     if (!res.ok) throw new Error(`Failed to get presigned URL: ${res.statusText}`);
     const responseData = await res.json();
-    const body = JSON.parse(responseData.body);
-    const downloadUrl = body.downloadUrl;
-
+    const downloadUrl = responseData.downloadUrl;
     const response = await fetch(downloadUrl);
 
     if (!response.ok) {

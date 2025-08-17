@@ -43,3 +43,6 @@ amplify/layers/**/nodejs/node_modules/
 notes.txt
 
 amplify/node_modules
+/src/generated/prisma
+.env
+amplify/.env*

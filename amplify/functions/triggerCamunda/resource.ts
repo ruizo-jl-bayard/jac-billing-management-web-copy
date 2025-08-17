@@ -22,6 +22,6 @@ export const triggerCamunda = defineFunction({
         BPMN_PROCESS_ID: 'Process_0owrc6e'
     },
     layers: {
-        "@camunda8/sdk": "arn:aws:lambda:ap-northeast-1:940482428367:layer:camunda-sdk8-layer:1"
+        "@camunda8/sdk": "arn:aws:lambda:us-west-2:940482428367:layer:camunda-sdk-8:2"
     }
 });
