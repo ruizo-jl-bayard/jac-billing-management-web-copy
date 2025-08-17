@@ -26,21 +26,29 @@ export default function PaymentStatusPage() {
     try {
       const month = 8;
       const year = 2025;
+
+      const selectedFiles = {
+        acceptanceFile: list.find(
+          (a) => a.isLatest && a.key.includes("acceptance")
+        ),
+        membershipInformationFile: list.find(
+          (a) => a.isLatest && a.key.includes("member")
+        ),
+        reEmploymentHistory: list.find(
+          (a) => a.isLatest && a.key.includes("reemployment")
+        ),
+      };
       const fileProcess = await client.mutations.saveMetadata({
+        ...selectedFiles,
         month,
         year,
-        acceptanceFile: list.find((a) => a.isLatest),
-        membershipInformationFile: list.find((a) => a.isLatest),
-        reEmploymentHistory: list.find((a) => a.isLatest),
       });
 
       if (!fileProcess.data) throw new Error("File process creation failed");
 
       await client.mutations.triggerCamunda({
+        ...selectedFiles,
         fileProcessId: fileProcess.data.processId ?? "",
-        acceptanceFile: list.find((a) => a.isLatest),
-        membershipInformationFile: list.find((a) => a.isLatest),
-        reEmploymentHistory: list.find((a) => a.isLatest),
       });
 
       alert("Form saved successfully");
