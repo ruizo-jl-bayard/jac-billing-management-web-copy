@@ -11,7 +11,10 @@
     "paths": {
       "$amplify/*": [
         "../.amplify/generated/*"
-      ]
-    }
+      ],
+      "@prisma/client": ["./layers/prisma/nodejs/node_modules/@prisma/client"]
+    
+    },
+    "preserveSymlinks": true
   }
 }

@@ -2,6 +2,7 @@ import { type ClientSchema, a, defineData } from "@aws-amplify/backend";
 import { sayHello } from "../functions/sayHello/resource";
 import { getS3Objects } from "../functions/getS3Objects/resource";
 import { saveForm } from "../functions/saveForm/resource";
+import { triggerCamunda } from "../functions/triggerCamunda/resource";
 
 /*== STEP 1 ===============================================================
 The section below creates a Todo database table with a "content" field. Try
@@ -9,14 +10,15 @@ adding a new "isDone" field as a boolean. The authorization rule below
 specifies that any user authenticated via an API key can "create", "read",
 "update", and "delete" any "Todo" records.
 =========================================================================*/
+import { schema as generatedSqlSchema } from './schema.sql';
+import { saveMetadata } from "../functions/saveMetadata/resource";
+
+const sqlSchema = generatedSqlSchema.authorization(allow => [
+  allow.resource(saveMetadata).to(['query', 'listen', 'mutate']),
+]);
+
 
 const schema = a.schema({
-  Todo: a
-    .model({
-      content: a.string(),
-    })
-    .authorization((allow) => [allow.authenticated()]),
-
   S3File: a.customType({
     key: a.string(),
     versionId: a.string(),
@@ -24,7 +26,8 @@ const schema = a.schema({
   }),
   FileInput: a.customType({
     key: a.string().required(),
-    versionId: a.string().required()
+    versionId: a.string().required(),
+    isLatest: a.boolean()
   }),
   sayHello: a
     .mutation()
@@ -50,13 +53,38 @@ const schema = a.schema({
     .authorization((allow) => allow.authenticated())
     .handler((a.handler.function(saveForm)))
     .returns(a.boolean()),
+  saveMetadata: a
+    .mutation()
+    .arguments({
+      acceptanceFile: a.ref("FileInput"),
+      membershipInformationFile: a.ref("FileInput"),
+      reEmploymentHistory: a.ref("FileInput"),
+      month: a.integer().required(),
+      year: a.integer().required()
+    })
+    .authorization((allow) => allow.authenticated())
+    .handler((a.handler.function(saveMetadata)))
+    .returns(a.customType({
+      processId: a.string()
+    })),
+  triggerCamunda: a
+    .mutation()
+    .arguments({
+      fileProcessId: a.string().required(),
+      acceptanceFile: a.ref("FileInput"),
+      membershipInformationFile: a.ref("FileInput"),
+      reEmploymentHistory: a.ref("FileInput")
+    })
+    .authorization((allow) => allow.authenticated())
+    .handler((a.handler.function(triggerCamunda)))
+    .returns(a.boolean()),
 
 });
-
-export type Schema = ClientSchema<typeof schema>;
+const combinedSchema = a.combine([schema, sqlSchema]);
+export type Schema = ClientSchema<typeof combinedSchema>;
 
 export const data = defineData({
-  schema,
+  schema: combinedSchema,
   authorizationModes: {
     defaultAuthorizationMode: "userPool",
     // API Key is used for a.allow.public() rules
