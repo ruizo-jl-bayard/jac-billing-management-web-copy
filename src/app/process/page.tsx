@@ -1,7 +1,7 @@
 "use client"
 import React, { useState, useEffect } from "react";
 import { CalendarDays, FileText, AlertCircle, RefreshCw } from "lucide-react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -27,8 +27,12 @@ export default function ProcessPage() {
   const [acceptance, setAcceptance] = useState("");
   const [membership, setMembership] = useState("");
   const [reemployment, setReemployment] = useState("");
+  const defaultYear = String(new Date().getFullYear());
+  const defaultMonth = (() => { const m = new Date().getMonth() + 1; return m < 10 ? `0${m}` : String(m); })();
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
+  const [year, setYear] = useState<string>(defaultYear);
+  const [month, setMonth] = useState<string>(defaultMonth);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [acceptanceOptions, setAcceptanceOptions] = useState<File[]>([]);
   const [membershipOptions, setMembershipOptions] = useState<File[]>([]);
@@ -36,6 +40,7 @@ export default function ProcessPage() {
   const [otherOptions, setOtherOptions] = useState<File[]>([]);
   const [loading, setLoading] = useState(false);
   const [fetchingFiles, setFetchingFiles] = useState(false);
+  const [lastFetchedAt, setLastFetchedAt] = useState<string | null>(null);
 
   const fetchFiles = async () => {
     setFetchingFiles(true);
@@ -68,13 +73,7 @@ export default function ProcessPage() {
       setMembership("");
       setReemployment("");
 
-      console.log('Files fetched successfully:', {
-        acceptance: acceptanceFiles.length,
-        membership: membershipFiles.length,
-        reemployment: reemploymentFiles.length,
-        other: otherFiles.length
-      });
-
+  setLastFetchedAt(new Date().toISOString());
     } catch (error) {
       console.error("Error fetching files:", error);
     } finally {
@@ -85,6 +84,12 @@ export default function ProcessPage() {
   useEffect(() => {
     fetchFiles();
   }, []);
+
+  const currentYear = new Date().getFullYear();
+  const yearOptions: string[] = [];
+  for (let y = currentYear; y >= 2000; y--) {
+    yearOptions.push(String(y));
+  }
 
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
@@ -97,6 +102,14 @@ export default function ProcessPage() {
     }
     if (!reemployment) {
       newErrors.reemployment = "Reemployment history file is required";
+    }
+    if (!year) {
+      newErrors.year = "Year is required";
+    } else if (isNaN(Number(year)) || Number(year) < 1900 || Number(year) > 2100) {
+      newErrors.year = "Enter a valid year";
+    }
+    if (!month) {
+      newErrors.month = "Month is required";
     }
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -132,11 +145,13 @@ export default function ProcessPage() {
 
         alert("Process completed successfully!");
 
-        setAcceptance("");
-        setMembership("");
-        setReemployment("");
-        setStartDate("");
-        setEndDate("");
+  setAcceptance("");
+  setMembership("");
+  setReemployment("");
+  setStartDate("");
+  setEndDate("");
+  setYear(defaultYear);
+  setMonth(defaultMonth);
 
       } catch (error) {
         alert("Error processing files. Please try again.");
@@ -160,9 +175,6 @@ export default function ProcessPage() {
                   <FileText className="w-5 h-5" />
                   Fetch Files from S3
                 </CardTitle>
-                <CardDescription>
-                  Files are automatically loaded. Click refresh to update the list.
-                </CardDescription>
               </div>
               <Button
                 onClick={fetchFiles}
@@ -177,6 +189,9 @@ export default function ProcessPage() {
             {(acceptanceOptions.length > 0 || membershipOptions.length > 0 || reemploymentOptions.length > 0 || otherOptions.length > 0) && (
               <div className="mt-4 text-sm text-muted-foreground">
                 Files found: {acceptanceOptions.length} acceptance, {membershipOptions.length} membership, {reemploymentOptions.length} reemployment
+                {lastFetchedAt && (
+                  <div className="text-xs text-muted-foreground mt-1">Last fetched: {new Date(lastFetchedAt).toLocaleString()}</div>
+                )}
               </div>
             )}
             <div>
@@ -245,6 +260,79 @@ export default function ProcessPage() {
 
         <div className="space-y-6 p-2 mt-5">
           <div>
+            <div className="mb-4">
+              <div className="flex items-center gap-2 mb-3">
+                <CalendarDays className="w-4 h-4 text-muted-foreground" />
+                <Label className="text-sm font-medium">Year & Month</Label>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="year" className="text-sm font-medium flex items-center gap-1"> 
+                    <span>Year</span>
+                    <span className="text-destructive">*</span>
+                  </Label>
+                  <Select value={year} onValueChange={(value) => {
+                    setYear(value);
+                    if (errors.year) {
+                      const newErrors = { ...errors };
+                      delete newErrors.year;
+                      setErrors(newErrors);
+                    }
+                  }}>
+                    <SelectTrigger id="year" className="h-11">
+                      <SelectValue placeholder="Select year" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {yearOptions.map((y) => (
+                        <SelectItem key={y} value={y}>{y}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  {errors.year && <p className="text-sm text-destructive flex items-center gap-1">
+                    <AlertCircle className="w-4 h-4" />
+                    {errors.year}
+                  </p>}
+                </div>
+
+                <div className="space-y-2 md:col-span-2">
+                  <Label htmlFor="month" className="text-sm font-medium flex items-center gap-1">
+                    <span>Month</span>
+                    <span className="text-destructive">*</span>
+                  </Label>
+                  <Select value={month} onValueChange={(value) => {
+                    setMonth(value);
+                    if (errors.month) {
+                      const newErrors = { ...errors };
+                      delete newErrors.month;
+                      setErrors(newErrors);
+                    }
+                  }}>
+                    <SelectTrigger id="month" className="h-11">
+                      <SelectValue placeholder="Select month" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="01">January</SelectItem>
+                      <SelectItem value="02">February</SelectItem>
+                      <SelectItem value="03">March</SelectItem>
+                      <SelectItem value="04">April</SelectItem>
+                      <SelectItem value="05">May</SelectItem>
+                      <SelectItem value="06">June</SelectItem>
+                      <SelectItem value="07">July</SelectItem>
+                      <SelectItem value="08">August</SelectItem>
+                      <SelectItem value="09">September</SelectItem>
+                      <SelectItem value="10">October</SelectItem>
+                      <SelectItem value="11">November</SelectItem>
+                      <SelectItem value="12">December</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  {errors.month && <p className="text-sm text-destructive flex items-center gap-1">
+                    <AlertCircle className="w-4 h-4" />
+                    {errors.month}
+                  </p>}
+                </div>
+              </div>
+            </div>
+
             <div className="flex items-center gap-2 mb-4">
               <FileText className="w-4 h-4 text-muted-foreground" />
               <Label className="text-sm font-medium">File Selection</Label>
@@ -359,7 +447,7 @@ export default function ProcessPage() {
             <Button
               onClick={handleSave}
               className="h-11"
-              disabled={loading || !acceptance || !membership || !reemployment}
+              disabled={loading || !acceptance || !membership || !reemployment || !year || !month}
             >
               {loading ? (
                 <>
