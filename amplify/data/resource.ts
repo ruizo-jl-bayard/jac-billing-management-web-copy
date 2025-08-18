@@ -20,7 +20,7 @@ const schema = a.schema({
   S3File: a.customType({
     key: a.string(),
     versionId: a.string(),
-    istLatest: a.boolean()
+    isLatest: a.boolean()
   }),
   FileInput: a.customType({
     key: a.string().required(),

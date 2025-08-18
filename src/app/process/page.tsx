@@ -1,11 +1,27 @@
 "use client"
-import React, { useState } from "react";
-import { CalendarDays, FileText, AlertCircle } from "lucide-react";
+import React, { useState, useEffect } from "react";
+import { CalendarDays, FileText, AlertCircle, RefreshCw } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
+import type { Schema } from "../../../amplify/data/resource";
+import { generateClient } from "aws-amplify/data";
+
+const client = generateClient<Schema>();
+
+type File = {
+  key: string;
+  versionId: string;
+  isLatest: boolean;
+};
+
+const DIRECTORY_PREFIXES = {
+  ACCEPTANCE: 'acceptance_file',
+  MEMBERSHIP: 'member_information_raw',
+  REEMPLOYMENT: 'reemployment_history'
+} as const;
 
 export default function ProcessPage() {
   const [acceptance, setAcceptance] = useState("");
@@ -14,54 +30,65 @@ export default function ProcessPage() {
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
   const [errors, setErrors] = useState<Record<string, string>>({});
-  const [acceptanceOptions, setAcceptanceOptions] = useState<string[]>([]);
-  const [membershipOptions, setMembershipOptions] = useState<string[]>([]);
-  const [reemploymentOptions, setReemploymentOptions] = useState<string[]>([]);
+  const [acceptanceOptions, setAcceptanceOptions] = useState<File[]>([]);
+  const [membershipOptions, setMembershipOptions] = useState<File[]>([]);
+  const [reemploymentOptions, setReemploymentOptions] = useState<File[]>([]);
+  const [otherOptions, setOtherOptions] = useState<File[]>([]);
   const [loading, setLoading] = useState(false);
+  const [fetchingFiles, setFetchingFiles] = useState(false);
 
-  const fetchFileOptions = async () => {
-    if (!startDate || !endDate) return;
-    
-    setLoading(true);
+  const fetchFiles = async () => {
+    setFetchingFiles(true);
     try {
-      // Simulate API call to fetch files based on date range
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // Mock data - replace with actual API call
-      const mockAcceptanceFiles = [
-        `Acceptance_${startDate}_to_${endDate}_001`,
-        `Acceptance_${startDate}_to_${endDate}_002`,
-        `Acceptance_${startDate}_to_${endDate}_003`,
-      ];
-      const mockMembershipFiles = [
-        `Membership_${startDate}_to_${endDate}_001`,
-        `Membership_${startDate}_to_${endDate}_002`,
-        `Membership_${startDate}_to_${endDate}_003`,
-      ];
-      const mockReemploymentFiles = [
-        `Reemployment_${startDate}_to_${endDate}_001`,
-        `Reemployment_${startDate}_to_${endDate}_002`,
-        `Reemployment_${startDate}_to_${endDate}_003`,
-      ];
-      
-      setAcceptanceOptions(mockAcceptanceFiles);
-      setMembershipOptions(mockMembershipFiles);
-      setReemploymentOptions(mockReemploymentFiles);
-      
-      // Reset selected values when options change
+      const response = await client.queries.getS3Objects() as { data: unknown };
+      const files = response.data as File[];
+
+      const acceptanceFiles = files.filter(file =>
+        file.key.startsWith(DIRECTORY_PREFIXES.ACCEPTANCE)
+      );
+      const membershipFiles = files.filter(file =>
+        file.key.startsWith(DIRECTORY_PREFIXES.MEMBERSHIP)
+      );
+      const reemploymentFiles = files.filter(file =>
+        file.key.startsWith(DIRECTORY_PREFIXES.REEMPLOYMENT)
+      );
+
+      const otherFiles = files.filter(file =>
+        !file.key.startsWith(DIRECTORY_PREFIXES.ACCEPTANCE) &&
+        !file.key.startsWith(DIRECTORY_PREFIXES.MEMBERSHIP) &&
+        !file.key.startsWith(DIRECTORY_PREFIXES.REEMPLOYMENT)
+      );
+
+      setAcceptanceOptions(acceptanceFiles);
+      setMembershipOptions(membershipFiles);
+      setReemploymentOptions(reemploymentFiles);
+      setOtherOptions(otherFiles);
+
       setAcceptance("");
       setMembership("");
       setReemployment("");
+
+      console.log('Files fetched successfully:', {
+        acceptance: acceptanceFiles.length,
+        membership: membershipFiles.length,
+        reemployment: reemploymentFiles.length,
+        other: otherFiles.length
+      });
+
     } catch (error) {
-      console.error("Error fetching file options:", error);
+      console.error("Error fetching files:", error);
     } finally {
-      setLoading(false);
+      setFetchingFiles(false);
     }
   };
 
+  useEffect(() => {
+    fetchFiles();
+  }, []);
+
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
-    
+
     if (!acceptance) {
       newErrors.acceptance = "Acceptance file is required";
     }
@@ -71,125 +98,162 @@ export default function ProcessPage() {
     if (!reemployment) {
       newErrors.reemployment = "Reemployment history file is required";
     }
-    if (!startDate) {
-      newErrors.startDate = "Start date is required";
-    }
-    if (!endDate) {
-      newErrors.endDate = "End date is required";
-    }
-    if (startDate && endDate && new Date(startDate) > new Date(endDate)) {
-      newErrors.endDate = "End date must be after start date";
-    }
-
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (validateForm()) {
-      // Handle save logic here
-      console.log("Saving process data:", {
-        acceptance,
-        membership,
-        reemployment,
-        startDate,
-        endDate,
-      });
-      alert("Process data saved successfully!");
+      setLoading(true);
+      try {
+
+        const selectedAcceptance = acceptanceOptions.find(file => file.key === acceptance);
+        const selectedMembership = membershipOptions.find(file => file.key === membership);
+        const selectedReemployment = reemploymentOptions.find(file => file.key === reemployment);
+
+        if (!selectedAcceptance || !selectedMembership || !selectedReemployment) {
+          throw new Error("Selected files not found");
+        }
+
+        const result = await client.mutations.saveForm({
+          acceptanceFile: {
+            key: selectedAcceptance.key,
+            versionId: selectedAcceptance.versionId
+          },
+          membershipInformationFile: {
+            key: selectedMembership.key,
+            versionId: selectedMembership.versionId
+          },
+          reEmploymentHistory: {
+            key: selectedReemployment.key,
+            versionId: selectedReemployment.versionId
+          },
+        });
+
+        alert("Process completed successfully!");
+
+        setAcceptance("");
+        setMembership("");
+        setReemployment("");
+        setStartDate("");
+        setEndDate("");
+
+      } catch (error) {
+        alert("Error processing files. Please try again.");
+      } finally {
+        setLoading(false);
+      }
     }
   };
 
   return (
-    <div className="grid gap-4">
+    <div
+      className="flex flex-col min-h-screen"
+      style={{ minHeight: '100vh' }}
+    >
       <div className="grid auto-rows-min gap-4 md:grid-cols-1">
-        {/* Date Filter Card */}
         <Card>
           <CardHeader className="pb-3">
-            <CardTitle className="text-lg flex items-center gap-2">
-              <CalendarDays className="w-5 h-5" />
-              Date Filter
-            </CardTitle>
-            <CardDescription>
-              Select date range to filter available files
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="startDate" className="text-sm font-medium flex items-center gap-1">
-                  <span>From Date</span>
-                  <span className="text-destructive">*</span>
-                </Label>
-                <div className="relative">
-                  <Input
-                    id="startDate"
-                    type="date"
-                    value={startDate}
-                    onChange={(e) => {
-                      setStartDate(e.target.value);
-                      if (errors.startDate) {
-                        const newErrors = { ...errors };
-                        delete newErrors.startDate;
-                        setErrors(newErrors);
-                      }
-                    }}
-                    className="pl-10"
-                  />
-                  <CalendarDays className="w-4 h-4 text-muted-foreground absolute left-3 top-1/2 transform -translate-y-1/2" />
-                </div>
-                {errors.startDate && <p className="text-sm text-destructive flex items-center gap-1">
-                  <AlertCircle className="w-4 h-4" />
-                  {errors.startDate}
-                </p>}
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <FileText className="w-5 h-5" />
+                  Fetch Files from S3
+                </CardTitle>
+                <CardDescription>
+                  Files are automatically loaded. Click refresh to update the list.
+                </CardDescription>
               </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="endDate" className="text-sm font-medium flex items-center gap-1">
-                  <span>To Date</span>
-                  <span className="text-destructive">*</span>
-                </Label>
-                <div className="relative">
-                  <Input
-                    id="endDate"
-                    type="date"
-                    value={endDate}
-                    onChange={(e) => {
-                      setEndDate(e.target.value);
-                      if (errors.endDate) {
-                        const newErrors = { ...errors };
-                        delete newErrors.endDate;
-                        setErrors(newErrors);
-                      }
-                    }}
-                    className="pl-10"
-                  />
-                  <CalendarDays className="w-4 h-4 text-muted-foreground absolute left-3 top-1/2 transform -translate-y-1/2" />
+              <Button
+                onClick={fetchFiles}
+                disabled={fetchingFiles}
+                variant="outline"
+                size="sm"
+              >
+                <RefreshCw className={`w-4 h-4 mr-2 ${fetchingFiles ? 'animate-spin' : ''}`} />
+                {fetchingFiles ? 'Loading...' : 'Refresh Files'}
+              </Button>
+            </div>
+            {(acceptanceOptions.length > 0 || membershipOptions.length > 0 || reemploymentOptions.length > 0 || otherOptions.length > 0) && (
+              <div className="mt-4 text-sm text-muted-foreground">
+                Files found: {acceptanceOptions.length} acceptance, {membershipOptions.length} membership, {reemploymentOptions.length} reemployment
+              </div>
+            )}
+            <div>
+              <div className="flex items-center gap-2 mt-5 mb-3">
+                <CalendarDays className="w-4 h-4" />
+                <Label className="text-sm font-medium">Fetch Specific Dates</Label>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="startDate" className="text-sm font-medium flex items-center gap-1">
+                    <span>From</span>
+                  </Label>
+                  <div className="relative">
+                    <Input
+                      id="startDate"
+                      type="date"
+                      value={startDate}
+                      onChange={(e) => {
+                        setStartDate(e.target.value);
+                        if (errors.startDate) {
+                          const newErrors = { ...errors };
+                          delete newErrors.startDate;
+                          setErrors(newErrors);
+                        }
+                      }}
+                      className="pl-10"
+                    />
+                    <CalendarDays className="w-4 h-4 text-muted-foreground absolute left-3 top-1/2 transform -translate-y-1/2" />
+                  </div>
+                  {errors.startDate && <p className="text-sm text-destructive flex items-center gap-1">
+                    <AlertCircle className="w-4 h-4" />
+                    {errors.startDate}
+                  </p>}
                 </div>
-                {errors.endDate && <p className="text-sm text-destructive flex items-center gap-1">
-                  <AlertCircle className="w-4 h-4" />
-                  {errors.endDate}
-                </p>}
+
+                <div className="space-y-2 mb-5">
+                  <Label htmlFor="endDate" className="text-sm font-medium flex items-center gap-1">
+                    <span>To</span>
+                  </Label>
+                  <div className="relative">
+                    <Input
+                      id="endDate"
+                      type="date"
+                      value={endDate}
+                      onChange={(e) => {
+                        setEndDate(e.target.value);
+                        if (errors.endDate) {
+                          const newErrors = { ...errors };
+                          delete newErrors.endDate;
+                          setErrors(newErrors);
+                        }
+                      }}
+                      className="pl-10"
+                    />
+                    <CalendarDays className="w-4 h-4 text-muted-foreground absolute left-3 top-1/2 transform -translate-y-1/2" />
+                  </div>
+                  {errors.endDate && <p className="text-sm text-destructive flex items-center gap-1">
+                    <AlertCircle className="w-4 h-4" />
+                    {errors.endDate}
+                  </p>}
+                </div>
               </div>
             </div>
-          </CardContent>
+          </CardHeader>
         </Card>
 
-        {/* File Selection Card */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <FileText className="w-5 h-5" />
-              Process
-            </CardTitle>
-            <CardDescription>
-              Select files to process based on your date filter
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-6">
+        <div className="space-y-6 p-2 mt-5">
+          <div>
+            <div className="flex items-center gap-2 mb-4">
+              <FileText className="w-4 h-4 text-muted-foreground" />
+              <Label className="text-sm font-medium">File Selection</Label>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="acceptance" className="text-sm font-medium flex items-center gap-1">
-                  <span>Acceptance File</span>
+                  <span>Acceptance</span>
                   <span className="text-destructive">*</span>
                 </Label>
                 <Select value={acceptance} onValueChange={(value) => {
@@ -204,9 +268,15 @@ export default function ProcessPage() {
                     <SelectValue placeholder="Select acceptance file" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="acceptance-001">Acceptance File 001</SelectItem>
-                    <SelectItem value="acceptance-002">Acceptance File 002</SelectItem>
-                    <SelectItem value="acceptance-003">Acceptance File 003</SelectItem>
+                    {acceptanceOptions.length > 0 ? (
+                      acceptanceOptions.map((file) => (
+                        <SelectItem key={`${file.key}-${file.versionId}`} value={file.key}>
+                          {file.key} {file.isLatest ? "(Latest)" : ""}
+                        </SelectItem>
+                      ))
+                    ) : (
+                      <SelectItem value="">No files available</SelectItem>
+                    )}
                   </SelectContent>
                 </Select>
                 {errors.acceptance && <p className="text-sm text-destructive flex items-center gap-1">
@@ -217,7 +287,7 @@ export default function ProcessPage() {
 
               <div className="space-y-2">
                 <Label htmlFor="membership" className="text-sm font-medium flex items-center gap-1">
-                  <span>Membership File</span>
+                  <span>Membership</span>
                   <span className="text-destructive">*</span>
                 </Label>
                 <Select value={membership} onValueChange={(value) => {
@@ -232,9 +302,15 @@ export default function ProcessPage() {
                     <SelectValue placeholder="Select membership file" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="membership-001">Membership File 001</SelectItem>
-                    <SelectItem value="membership-002">Membership File 002</SelectItem>
-                    <SelectItem value="membership-003">Membership File 003</SelectItem>
+                    {membershipOptions.length > 0 ? (
+                      membershipOptions.map((file) => (
+                        <SelectItem key={`${file.key}-${file.versionId}`} value={file.key}>
+                          {file.key} {file.isLatest ? "(Latest)" : ""}
+                        </SelectItem>
+                      ))
+                    ) : (
+                      <SelectItem value="">No files available</SelectItem>
+                    )}
                   </SelectContent>
                 </Select>
                 {errors.membership && <p className="text-sm text-destructive flex items-center gap-1">
@@ -245,7 +321,7 @@ export default function ProcessPage() {
 
               <div className="space-y-2">
                 <Label htmlFor="reemployment" className="text-sm font-medium flex items-center gap-1">
-                  <span>Reemployment History File</span>
+                  <span>Reemployment History</span>
                   <span className="text-destructive">*</span>
                 </Label>
                 <Select value={reemployment} onValueChange={(value) => {
@@ -260,9 +336,15 @@ export default function ProcessPage() {
                     <SelectValue placeholder="Select reemployment history file" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="reemployment-001">Reemployment History File 001</SelectItem>
-                    <SelectItem value="reemployment-002">Reemployment History File 002</SelectItem>
-                    <SelectItem value="reemployment-003">Reemployment History File 003</SelectItem>
+                    {reemploymentOptions.length > 0 ? (
+                      reemploymentOptions.map((file) => (
+                        <SelectItem key={`${file.key}-${file.versionId}`} value={file.key}>
+                          {file.key} {file.isLatest ? "(Latest)" : ""}
+                        </SelectItem>
+                      ))
+                    ) : (
+                      <SelectItem value="">No files available</SelectItem>
+                    )}
                   </SelectContent>
                 </Select>
                 {errors.reemployment && <p className="text-sm text-destructive flex items-center gap-1">
@@ -270,19 +352,26 @@ export default function ProcessPage() {
                   {errors.reemployment}
                 </p>}
               </div>
-
-              <div className="pt-4 border-t">
-                <Button 
-                  onClick={handleSave} 
-                  className="w-full h-11"
-                  disabled={true}
-                >
-                  Process Files
-                </Button>
-              </div>
             </div>
-          </CardContent>
-        </Card>
+          </div>
+
+          <div className="flex justify-end mt-4">
+            <Button
+              onClick={handleSave}
+              className="h-11"
+              disabled={loading || !acceptance || !membership || !reemployment}
+            >
+              {loading ? (
+                <>
+                  <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                  Processing Files...
+                </>
+              ) : (
+                "Process"
+              )}
+            </Button>
+          </div>
+        </div>
       </div>
     </div>
   );
