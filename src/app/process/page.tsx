@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 import type { Schema } from "../../../amplify/data/resource";
 import { generateClient } from "aws-amplify/data";
+import { useToast } from "@/components/ui/toast";
 
 const client = generateClient<Schema>();
 
@@ -39,8 +40,10 @@ export default function ProcessPage() {
   const [reemploymentOptions, setReemploymentOptions] = useState<File[]>([]);
   const [otherOptions, setOtherOptions] = useState<File[]>([]);
   const [loading, setLoading] = useState(false);
+  const [savedProcessId, setSavedProcessId] = useState<string | null>(null);
   const [fetchingFiles, setFetchingFiles] = useState(false);
   const [lastFetchedAt, setLastFetchedAt] = useState<string | null>(null);
+  const { toast } = useToast();
 
   const fetchFiles = async () => {
     setFetchingFiles(true);
@@ -119,7 +122,6 @@ export default function ProcessPage() {
     if (validateForm()) {
       setLoading(true);
       try {
-
         const selectedAcceptance = acceptanceOptions.find(file => file.key === acceptance);
         const selectedMembership = membershipOptions.find(file => file.key === membership);
         const selectedReemployment = reemploymentOptions.find(file => file.key === reemployment);
@@ -128,38 +130,136 @@ export default function ProcessPage() {
           throw new Error("Selected files not found");
         }
 
-        const result = await client.mutations.saveForm({
-          acceptanceFile: {
-            key: selectedAcceptance.key,
-            versionId: selectedAcceptance.versionId
-          },
-          membershipInformationFile: {
-            key: selectedMembership.key,
-            versionId: selectedMembership.versionId
-          },
-          reEmploymentHistory: {
-            key: selectedReemployment.key,
-            versionId: selectedReemployment.versionId
-          },
-        });
+        let saveResult;
+        try {
+          saveResult = await client.mutations.saveMetadata({
+            acceptanceFile: {
+              key: selectedAcceptance.key,
+              versionId: selectedAcceptance.versionId
+            },
+            membershipInformationFile: {
+              key: selectedMembership.key,
+              versionId: selectedMembership.versionId
+            },
+            reEmploymentHistory: {
+              key: selectedReemployment.key,
+              versionId: selectedReemployment.versionId
+            },
+            year: Number(year),
+            month: Number(month),
+          });
+        } catch (saveErr) {
+          console.error('Error saving metadata:', saveErr);
+          toast({ title: 'Save failed', description: 'Failed to save metadata. Please check the inputs and try again.', type: 'error' });
+          return;
+        }
 
-        alert("Process completed successfully!");
+        // If save succeeded, trigger Camunda. Pass through the saved metadata if available.
+        try {
+          // triggerCamunda expects the fileProcessId and the file inputs
+          const fileProcessId = (saveResult as any)?.processId || (saveResult as any)?.data?.processId;
+          if (!fileProcessId) {
+            console.error('No processId returned from saveMetadata:', saveResult);
+            toast({ title: 'No process id', description: 'Saved metadata but did not receive a process id. Cannot trigger workflow.', type: 'error' });
+            return;
+          }
 
-  setAcceptance("");
-  setMembership("");
-  setReemployment("");
-  setStartDate("");
-  setEndDate("");
-  setYear(defaultYear);
-  setMonth(defaultMonth);
+          // store process id so user can retry triggering later if needed
+          setSavedProcessId(fileProcessId);
+
+          await client.mutations.triggerCamunda({
+            fileProcessId,
+            acceptanceFile: {
+              key: selectedAcceptance.key,
+              versionId: selectedAcceptance.versionId
+            },
+            membershipInformationFile: {
+              key: selectedMembership.key,
+              versionId: selectedMembership.versionId
+            },
+            reEmploymentHistory: {
+              key: selectedReemployment.key,
+              versionId: selectedReemployment.versionId
+            }
+          });
+        } catch (triggerErr) {
+          console.error('Error triggering Camunda:', triggerErr);
+          // Metadata was saved but Camunda trigger failed. Keep form state so user can retry.
+          toast({ title: 'Trigger failed', description: 'Metadata saved but failed to trigger the workflow. You can retry triggering the workflow.', type: 'error' });
+          return;
+        }
+
+        // Both steps succeeded
+  toast({ title: 'Success', description: 'Process completed successfully!', type: 'success' });
+
+        setAcceptance("");
+        setMembership("");
+        setReemployment("");
+        setStartDate("");
+        setEndDate("");
+        setYear(defaultYear);
+        setMonth(defaultMonth);
 
       } catch (error) {
-        alert("Error processing files. Please try again.");
+        console.error('Unexpected error processing files:', error);
+        alert('Error processing files. Please try again.');
       } finally {
         setLoading(false);
       }
     }
   };
+
+  const retryTrigger = async () => {
+    if (!savedProcessId) {
+      toast({ title: 'No saved process', description: 'There is no saved process to trigger. Please process first.', type: 'error' });
+      return;
+    }
+    setLoading(true);
+    try {
+      const selectedAcceptance = acceptanceOptions.find(file => file.key === acceptance);
+      const selectedMembership = membershipOptions.find(file => file.key === membership);
+      const selectedReemployment = reemploymentOptions.find(file => file.key === reemployment);
+      if (!selectedAcceptance || !selectedMembership || !selectedReemployment) {
+        toast({ title: 'Files missing', description: 'Selected files are missing. Please re-select them.', type: 'error' });
+        return;
+      }
+
+      await client.mutations.triggerCamunda({
+        fileProcessId: savedProcessId,
+        acceptanceFile: {
+          key: selectedAcceptance.key,
+          versionId: selectedAcceptance.versionId
+        },
+        membershipInformationFile: {
+          key: selectedMembership.key,
+          versionId: selectedMembership.versionId
+        },
+        reEmploymentHistory: {
+          key: selectedReemployment.key,
+          versionId: selectedReemployment.versionId
+        }
+      });
+
+      toast({ title: 'Success', description: 'Workflow triggered successfully!', type: 'success' });
+      // clear saved process id after successful trigger
+      setSavedProcessId(null);
+
+      // clear form as everything succeeded
+      setAcceptance("");
+      setMembership("");
+      setReemployment("");
+      setStartDate("");
+      setEndDate("");
+      setYear(defaultYear);
+      setMonth(defaultMonth);
+
+    } catch (err) {
+      console.error('Retry trigger failed:', err);
+      toast({ title: 'Trigger failed', description: 'Retry failed. Please try again later.', type: 'error' });
+    } finally {
+      setLoading(false);
+    }
+  }
 
   return (
     <div
@@ -444,20 +544,34 @@ export default function ProcessPage() {
           </div>
 
           <div className="flex justify-end mt-4">
-            <Button
-              onClick={handleSave}
-              className="h-11"
-              disabled={loading || !acceptance || !membership || !reemployment || !year || !month}
-            >
-              {loading ? (
-                <>
-                  <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
-                  Processing Files...
-                </>
-              ) : (
-                "Process"
+            <div className="flex items-center gap-2">
+              {savedProcessId && (
+                <Button onClick={retryTrigger} variant="outline" className="h-11" disabled={loading}>
+                  {loading ? (
+                    <>
+                      <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                      Retrying...
+                    </>
+                  ) : (
+                    'Retry Trigger'
+                  )}
+                </Button>
               )}
-            </Button>
+              <Button
+                onClick={handleSave}
+                className="h-11"
+                disabled={loading || !acceptance || !membership || !reemployment || !year || !month}
+              >
+                {loading ? (
+                  <>
+                    <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                    Processing Files...
+                  </>
+                ) : (
+                  "Process"
+                )}
+              </Button>
+            </div>
           </div>
         </div>
       </div>

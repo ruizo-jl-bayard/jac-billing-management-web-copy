@@ -6,7 +6,7 @@ import { secret } from "@aws-amplify/backend";
 
 export const schema = configure({
     database: {
-        identifier: "ID9pOmwxl8BR4sHjPcCP1eHg",
+        identifier: "IDZb920Fx1GwK3ZQNQG5JPg",
         engine: "postgresql",
         connectionUri: secret("SQL_CONNECTION_STRING"),
         sslCert: secret("RDS_SSL_CERTIFICATE"),
@@ -69,7 +69,7 @@ export const schema = configure({
         fileName: a.string().required(),
         s3ObjectKey: a.string().required(),
         deletedAt: a.datetime(),
-        createdDate: a.datetime(),
+        createdDate: a.datetime().required(),
         isMigrated: a.boolean(),
         migratedRows: a.integer(),
         isNormalRuleApplied: a.boolean(),
@@ -271,23 +271,23 @@ export const schema = configure({
         "id"
     ]),
     FileProcessStatus: a.enum([
-        "INPROGRESS",
-        "CAMUNDA_PARSING",
-        "CAMUNDA_SERVICE_2",
-        "CAMUNDA_SERVICE_3",
+        "FAILED",
         "DONE",
-        "FAILED"
+        "CAMUNDA_SERVICE_3",
+        "CAMUNDA_SERVICE_2",
+        "CAMUNDA_PARSING",
+        "INPROGRESS"
     ]),
     ProcessLogsProcess: a.enum([
-        "PARSING",
-        "NORMAL_RULE",
+        "COMMON_RULE",
         "EXPORT",
-        "COMMON_RULE"
+        "NORMAL_RULE",
+        "PARSING"
     ]),
     FileUploadsFileType: a.enum([
-        "MEMBERS_INFO_DATA",
-        "REEMPLOYMENT_DATA",
+        "ACCEPTANCE_PLAN_DATA",
         "INFORMATION_SUPPLEMENT_DATA",
-        "ACCEPTANCE_PLAN_DATA"
+        "REEMPLOYMENT_DATA",
+        "MEMBERS_INFO_DATA"
     ])
 });
