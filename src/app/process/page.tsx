@@ -76,7 +76,7 @@ export default function ProcessPage() {
       setMembership("");
       setReemployment("");
 
-  setLastFetchedAt(new Date().toISOString());
+      setLastFetchedAt(new Date().toISOString());
     } catch (error) {
       console.error("Error fetching files:", error);
     } finally {
@@ -190,8 +190,9 @@ export default function ProcessPage() {
         }
 
         // Both steps succeeded
-  toast({ title: 'Success', description: 'Process completed successfully!', type: 'success' });
-
+        toast({ title: 'Success', description: 'Process completed successfully!', type: 'success' });
+        // clear any stored process id — trigger succeeded so no retry needed
+        setSavedProcessId(null);
         setAcceptance("");
         setMembership("");
         setReemployment("");
@@ -367,7 +368,7 @@ export default function ProcessPage() {
               </div>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="year" className="text-sm font-medium flex items-center gap-1"> 
+                  <Label htmlFor="year" className="text-sm font-medium flex items-center gap-1">
                     <span>Year</span>
                     <span className="text-destructive">*</span>
                   </Label>
@@ -565,7 +566,7 @@ export default function ProcessPage() {
                 {loading ? (
                   <>
                     <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
-                    Processing Files...
+                    Processing...
                   </>
                 ) : (
                   "Process"
