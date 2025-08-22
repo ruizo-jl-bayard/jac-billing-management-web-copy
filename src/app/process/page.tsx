@@ -10,7 +10,11 @@ import type { Schema } from "../../../amplify/data/resource";
 import { generateClient } from "aws-amplify/data";
 import { useToast } from "@/components/ui/toast";
 
-const client = generateClient<Schema>();
+// Lazily create the Amplify Data client at runtime so Amplify.configure()
+// (called from the Auth wrapper) runs first. Calling generateClient at
+// module-eval time can occur before Amplify is configured and causes the
+// runtime error: "Amplify has not been configured."
+const getClient = () => generateClient<Schema>();
 
 type File = {
   key: string;
@@ -48,7 +52,7 @@ export default function ProcessPage() {
   const fetchFiles = async () => {
     setFetchingFiles(true);
     try {
-      const response = await client.queries.getS3Objects() as { data: unknown };
+  const response = await getClient().queries.getS3Objects() as { data: unknown };
       const files = response.data as File[];
 
       const acceptanceFiles = files.filter(file =>
@@ -132,7 +136,7 @@ export default function ProcessPage() {
 
         let saveResult;
         try {
-          saveResult = await client.mutations.saveMetadata({
+          saveResult = await getClient().mutations.saveMetadata({
             acceptanceFile: {
               key: selectedAcceptance.key,
               versionId: selectedAcceptance.versionId
@@ -167,7 +171,7 @@ export default function ProcessPage() {
           // store process id so user can retry triggering later if needed
           setSavedProcessId(fileProcessId);
 
-          await client.mutations.triggerCamunda({
+          await getClient().mutations.triggerCamunda({
             fileProcessId,
             acceptanceFile: {
               key: selectedAcceptance.key,
@@ -225,7 +229,7 @@ export default function ProcessPage() {
         return;
       }
 
-      await client.mutations.triggerCamunda({
+  await getClient().mutations.triggerCamunda({
         fileProcessId: savedProcessId,
         acceptanceFile: {
           key: selectedAcceptance.key,
